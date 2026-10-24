@@ -1,0 +1,38 @@
+{# One month, all three sections, ONE document. The three calendars used to be
+   three complete pages concatenated, which put the masthead, nav and footer on
+   the page three times over; browsers tolerate it, validators and screen
+   readers do not. Sections are siblings inside a single <main>. #}
+{% extends "_base.html.j2" %}
+{% block title %}tierlist.tech {{ t('archive.title') }} · {{ title }}{% endblock %}
+{% block content %}
+<div class="cal-head">
+  <h1>{{ title }}</h1>
+  {# No neighbour, no link: .cal-head is a flex row, so an omitted anchor
+     closes the gap instead of leaving a dead target. #}
+  {% if prev_url %}<a href="{{ prev_url }}">{{ t('archive.prev') }}</a>{% endif %}
+  {% if next_url %}<a href="{{ next_url }}">{{ t('archive.next') }}</a>{% endif %}
+  {# Same keys as the issue pager: <link rel="prev|next"> is already in the
+     chrome above, so the months answer to ← / → too. The hint appears only
+     when there is somewhere to go — a lone month would otherwise advertise
+     a shortcut that does nothing. #}
+  {% if prev_url or next_url %}<span class="pg-hint">{{ t('pager.hint') }}</span>{% endif %}
+</div>
+<div class="cal-cols">
+  {% for s in sections %}
+  <section class="cal-wrap">
+    <h3 class="cal-sec">{% if s.section=='daily' %}{{ t('nav.daily') }}{% elif s.section=='weekly' %}{{ t('nav.weekly') }}{% else %}{{ t('nav.monthly') }}{% endif %}</h3>
+    <div class="cal" role="grid">
+      <span class="dow">{{ t('cal.dow1') }}</span><span class="dow">{{ t('cal.dow2') }}</span><span class="dow">{{ t('cal.dow3') }}</span>
+      <span class="dow">{{ t('cal.dow4') }}</span><span class="dow">{{ t('cal.dow5') }}</span><span class="dow">{{ t('cal.dow6') }}</span>
+      <span class="dow">{{ t('cal.dow7') }}</span>
+      {% for c in s.grid %}
+        {% if not c %}<span class="pad"></span>
+        {% elif c.url %}<a class="d has" href="{{ c.url }}">{{ c.day }}</a>
+        {% else %}<span class="d">{{ c.day }}</span>{% endif %}
+      {% endfor %}
+    </div>
+  </section>
+  {% endfor %}
+</div>
+{% endblock %}
+{% block footright %}/archive/{{ month }}.html{% endblock %}

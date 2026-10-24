@@ -1,0 +1,27 @@
+{#- The Atom channel is per-language: one feed lives at /feed.xml, its Chinese
+    twin at /zh/feed.xml. `p` is the language prefix ("" for en, "/zh"), so
+    self/alternate/id all point at THIS feed rather than at the en one — a
+    shared id would make the two indistinguishable to a reader. Entry titles
+    and URLs are payload and stay as captured; only the chrome is translated.
+-#}
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="{{ 'en' if lang == 'en' else 'zh-CN' }}">
+  <title>{{ t('feed.title') }}</title>
+  <subtitle>{{ t('feed.subtitle') }}</subtitle>
+  <link href="{{ site_url }}{{ p }}/feed.xml" rel="self"/>
+  <link href="{{ site_url }}{{ p }}/"/>
+  <link href="{{ site_url }}{{ alt_p }}/feed.xml" rel="alternate" hreflang="{{ 'zh-CN' if lang == 'en' else 'en' }}" type="application/atom+xml"/>
+  <id>{{ site_url }}{{ p }}/</id>
+  <updated>{{ updated }}</updated>
+  <generator>tierlist</generator>
+  {% for e in entries %}
+  <entry>
+    <title>{{ e.title }}</title>
+    <link href="{{ e.url }}"/>
+    <id>{{ e.url }}</id>
+    <updated>{{ e.updated }}</updated>
+    <summary>{{ e.summary }}</summary>
+    {% if e.tier %}<tl:tier xmlns:tl="https://tierlist.tech/ns">{{ e.tier }}</tl:tier>{% endif %}
+  </entry>
+  {% endfor %}
+</feed>

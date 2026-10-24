@@ -1,0 +1,154 @@
+{# Shared chrome: tokens, fonts, masthead, nav, footer. Every page extends this.
+   `t` is the translation function (i18n.t bound to this page's lang), `ctx`
+   carries lang + nav (URL-prefixed). `switch_url` and `page_path` are derived
+   by render._page_vars, not carried in ctx — the language link is the same
+   page in the other tree, so it follows from the path rather than being
+   spelled out by each caller. #}
+{# The Stepped vein mark: rock in the ink colour, vein in copper, so it
+   follows the page into dark mode. Drawn in the masthead and, large, on the
+   opening splash. #}
+{% macro mark(cls, size) -%}
+<svg class="{{ cls }}" width="{{ size }}" height="{{ size }}" viewBox="0 0 256 256" aria-hidden="true"><path class="mark-rock" fill-rule="evenodd" d="M124.8,74.4 L127.8,75.2 L130.0,77.4 L130.8,80.4 L130.8,103.6 L131.8,107.2 L133.9,109.4 L137.6,110.4 L172.8,110.4 L175.8,111.2 L178.0,113.4 L178.8,116.4 L178.8,139.6 L179.8,143.2 L181.9,145.4 L185.6,146.4 L215.3,146.4 L219.0,145.4 L221.1,143.2 L222.1,139.6 L222.1,95.0 L220.9,90.5 L189.8,36.7 L187.1,34.0 L183.4,33.1 L103.8,33.1 L97.5,35.7 L69.5,63.6 L67.7,66.6 L67.5,69.3 L68.5,71.8 L70.6,73.5 L74.0,74.4ZM33.9,131.7 L34.8,138.4 L64.2,189.5 L66.1,191.7 L68.7,193.0 L150.0,214.8 L152.9,214.9 L155.6,214.0 L193.9,191.9 L196.6,189.2 L197.3,186.4 L196.6,183.5 L194.4,181.3 L190.8,180.4 L150.8,180.4 L147.8,179.5 L145.6,177.4 L144.8,174.4 L144.8,151.1 L143.8,147.5 L141.7,145.3 L138.0,144.4 L102.8,144.4 L99.8,143.5 L97.6,141.4 L96.8,138.4 L96.8,115.1 L95.8,111.5 L93.7,109.3 L90.0,108.4 L45.4,108.4 L42.3,109.0 L40.3,110.6 L38.8,113.4Z"/><path class="mark-vein" fill-rule="evenodd" d="M101.8,100.4 L103.3,100.8 L104.4,101.9 L104.8,103.4 L104.8,133.0 L105.3,134.8 L106.3,135.9 L108.2,136.4 L149.8,136.4 L151.3,136.8 L152.4,137.9 L152.8,139.4 L152.8,169.0 L153.3,170.8 L154.3,171.9 L156.2,172.4 L216.7,172.4 L218.5,171.9 L219.6,170.8 L220.1,169.0 L220.1,157.7 L219.6,155.9 L218.5,154.8 L216.7,154.4 L173.8,154.4 L172.3,154.0 L171.2,152.9 L170.8,151.4 L170.8,121.7 L170.3,119.9 L169.2,118.8 L167.4,118.4 L125.8,118.4 L124.3,118.0 L123.2,116.9 L122.8,115.4 L122.8,85.7 L122.3,83.9 L121.2,82.8 L119.4,82.4 L55.4,82.4 L52.3,83.7 L48.4,87.5 L47.3,89.5 L45.5,96.1 L45.6,98.3 L46.6,99.7 L48.7,100.4Z"/></svg>
+{%- endmacro %}
+<!DOCTYPE html>
+<html lang="{{ 'en' if ctx.lang == 'en' else 'zh-CN' }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}{{ t('main.title') }}{% endblock %}</title>
+{# `site_url` and `page_path` are injected for every page by render._page_vars;
+   a page that does not know its own path still gets a valid absolute URL (the
+   language root). Both are needed here because canonical, OG and hreflang all
+   have to name the page from OUTSIDE the page — a relative href is meaningless
+   in a shared link card or a search index. #}
+{% set _abs = site_url ~ ctx.p ~ page_path %}
+<meta name="description" content="{% block description %}{{ t('meta.description') }}{% endblock %}">
+{% set _desc = self.description() | trim %}
+<link rel="canonical" href="{{ _abs }}">
+{# The pager, declared once for every page that has neighbours (issues,
+   archive calendars). static/pager.js reads THESE and nothing else, so a
+   page joins the ← / → chain by naming its neighbours rather than by being
+   listed in the script. Undefined on pages without a chain, which Jinja
+   renders as falsy — no link, no key handler. #}
+{% if prev_url %}<link rel="prev" href="{{ prev_url }}">{% endif %}
+{% if next_url %}<link rel="next" href="{{ next_url }}">{% endif %}
+{# Both trees carry the same content in two languages; without these a search
+   engine treats them as duplicates and picks one. x-default points at en,
+   which is what the bare origin serves. #}
+<link rel="alternate" hreflang="zh-CN" href="{{ site_url }}/zh{{ page_path }}">
+<link rel="alternate" hreflang="en" href="{{ site_url }}{{ page_path }}">
+<link rel="alternate" hreflang="x-default" href="{{ site_url }}{{ page_path }}">
+{# Link cards (Telegram, Slack, Discord, X) read these and nothing else. #}
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="tierlist.tech">
+<meta property="og:locale" content="{{ 'en_US' if ctx.lang == 'en' else 'zh_CN' }}">
+<meta property="og:title" content="{{ self.title() | trim }}">
+<meta property="og:description" content="{{ _desc }}">
+<meta property="og:url" content="{{ _abs }}">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="{{ self.title() | trim }}">
+<meta name="twitter:description" content="{{ _desc }}">
+<link rel="stylesheet" href="{{ ctx.p }}/style.css?v={{ asset_v.style }}">
+{# Not deferred: it decides whether the opening splash shows, and has to do
+   so before the body paints. #}
+<script src="{{ ctx.p }}/intro.js?v={{ asset_v.intro }}"></script>
+{# Unprefixed: an icon has no language, so both trees point at the files
+   the site writer drops at the root. The .ico comes first for clients that
+   cannot read SVG; a browser that can prefers the SVG, which follows the
+   reader's light or dark theme. #}
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="alternate" type="application/atom+xml" title="tierlist.tech" href="{{ ctx.p }}/feed.xml">
+{# Both faces come from Google Fonts, the one external origin the CSP
+   admits (style-src + font-src). Geist, a quiet neo-grotesk, sets every
+   Latin letter and figure; CJK characters fall through to Noto Sans SC at a
+   light weight, served as unicode-range slices so a page pulls only what it
+   uses. #}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
+</head>
+<body data-index="{{ ctx.p }}/search-index.json"
+      data-empty-query="{{ t('search.empty_query') }}"
+      data-no-results="{{ t('search.no_results') }}"
+      data-results="{{ t('search.results') }}"
+      data-index-count="{{ t('search.index_count') }}"
+      data-unrated="{{ t('tags.unrated') }}"
+      {%- if ctx.edition == 'daily' %} data-edition="{{ ctx.date }}" data-daily="{{ ctx.p }}/daily/" data-since="{{ t('since.last') }}"{% endif %}>
+{# The opening splash. Hidden unless intro.js put `intro-play` on <html>;
+   the slogan is the site's line in English on both trees, by decision. #}
+<div class="intro" id="intro" role="dialog" aria-label="tierlist.tech">
+  <div class="intro-stage">
+    <div class="intro-step is-1" aria-hidden="true">{{ mark("intro-mark", 112) }}</div>
+    <div class="intro-step is-2"><span class="intro-word">tierlist<span class="word-tld">.tech</span></span></div>
+    <p class="intro-step is-3 intro-line">Hidden gems, rated before they trend.</p>
+  </div>
+  <div class="intro-ctl">
+    <label><input type="checkbox" id="intro-once" checked> {{ t('intro.once') }}</label>
+    <button type="button" id="intro-skip">{{ t('intro.skip') }}</button>
+  </div>
+</div>
+<a class="skip" href="#main">{{ t('nav.skip') }}</a>
+<header class="mast">
+  <div class="wrap mast-in">
+    <a class="brand" href="{{ ctx.p }}/" aria-label="tierlist.tech">
+      {{ mark("mark", 26) }}
+      <span class="word">tierlist<span class="word-tld">.tech</span></span>
+    </a>
+    <nav class="nav" aria-label="tierlist.tech">
+      <a href="{{ ctx.nav['daily'] }}" {% if active=='daily' %}class="on" aria-current="page"{% endif %}>{{ t('nav.daily') }}</a>
+      <a href="{{ ctx.nav['weekly'] }}" {% if active=='weekly' %}class="on" aria-current="page"{% endif %}>{{ t('nav.weekly') }}</a>
+      <a href="{{ ctx.nav['monthly'] }}" {% if active=='monthly' %}class="on" aria-current="page"{% endif %}>{{ t('nav.monthly') }}</a>
+      <a href="{{ ctx.nav['news'] }}" {% if active=='news' %}class="on" aria-current="page"{% endif %}>{{ t('nav.news') }}</a>
+      <a href="{{ ctx.nav['archive'] }}" {% if active=='archive' %}class="on" aria-current="page"{% endif %}>{{ t('nav.archive') }}</a>
+      <a href="{{ ctx.p }}/tiers/" {% if active=='tiers' %}class="on" aria-current="page"{% endif %}>{{ t('nav.tiers') }}</a>
+      <a href="{{ ctx.nav['tags'] }}" {% if active=='tags' %}class="on" aria-current="page"{% endif %}>{{ t('nav.tags') }}</a>
+      <a href="{{ ctx.nav['docs'] }}" {% if active=='docs' %}class="on" aria-current="page"{% endif %}>{{ t('nav.docs') }}</a>
+    </nav>
+    {# A plain GET form: /search/ reads ?q= on load (search.js), so this
+       works with no script on the page it sits on. #}
+    <form class="qbox" role="search" action="{{ ctx.nav['search'] }}">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M20 20l-4.6-4.6"/></svg>
+      <input type="search" name="q" placeholder="{{ t('search.placeholder') }}" aria-label="{{ t('nav.search') }}">
+    </form>
+    {# The current language is plain text; the other one is the link, and it
+       keeps the `lang` class the tests and the switch_url contract name. #}
+    <div class="lang-sw">
+      {% if ctx.lang == 'en' %}<a class="lang" href="{{ switch_url }}" hreflang="zh-CN">{{ t('lang.zh_short') }}</a><span class="on">{{ t('lang.en_short') }}</span>
+      {% else %}<span class="on">{{ t('lang.zh_short') }}</span><a class="lang" href="{{ switch_url }}" hreflang="en">{{ t('lang.en_short') }}</a>{% endif %}
+    </div>
+  </div>
+</header>
+<main class="wrap" id="main">
+  {% block lede %}{% endblock %}
+  {% block content %}{% endblock %}
+</main>
+{% from "_parts.html.j2" import tier_mark with context %}
+<footer class="foot">
+  <div class="wrap">
+    {# The key: every tier mark with its name. #}
+    <dl class="legend" aria-label="{{ t('legend.title') }}">
+      {% for tr in ['S', 'A', 'B', 'C', 'D'] %}
+      <div class="lg"><dt>{{ tier_mark(tr, 28) }}</dt><dd>{{ t('tier.' ~ tr) }}</dd></div>
+      {% endfor %}
+    </dl>
+    <div class="foot-in">
+      <span>{% block footleft %}{{ t('foot.brand') }}{% endblock %}</span>
+      <span class="sp"></span>
+      <span class="foot-meta">{% block footright %}{% endblock %}</span>
+      <a href="{{ ctx.nav['archive'] }}">{{ t('nav.archive') }}</a>
+      <a href="{{ ctx.p }}/connect/">{{ t('nav.connect') }}</a>
+      {% if features.funding_page %}<a href="{{ ctx.p }}/funding/">{{ t('nav.funding') }}</a>{% endif %}
+      {% if features.json_api %}<a href="/api/v1/latest.json">{{ t('nav.api') }}</a>{% endif %}
+      {% if repo_url %}<a href="{{ repo_url }}" rel="noopener">GitHub</a>{% endif %}
+      <a href="{{ ctx.p }}/feed.xml" title="Atom">{{ t('nav.rss') }}</a>
+      <a href="#" id="intro-replay" hidden>{{ t('intro.replay') }}</a>
+    </div>
+  </div>
+</footer>
+{% if ctx.edition == 'daily' %}<script src="{{ ctx.p }}/since.js?v={{ asset_v.since }}" defer></script>{% endif %}
+{% if prev_url or next_url %}<script src="{{ ctx.p }}/pager.js" defer></script>{% endif %}
+</body>
+</html>

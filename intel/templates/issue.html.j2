@@ -1,0 +1,50 @@
+{% extends "_base.html.j2" %}
+{% from "_parts.html.j2" import entry, bands, boards, trending_boards, page_head, period_big with context %}
+{% block title %}tierlist.tech {{ ctx.edition_label }} · {{ ctx.period_label }}{% endblock %}
+{% block lede %}
+{% set sec_title %}{% if ctx.edition=='daily' %}{{ t('sec.daily_title') }}{% elif ctx.edition=='weekly' %}{{ t('sec.weekly_title') }}{% else %}{{ t('sec.monthly_title') }}{% endif %}{% endset %}
+{{ page_head(period_big(ctx.edition, ctx.period_label), sec_title,
+             'lede.created_range' if ctx.edition == 'daily' else 'lede.window_range',
+             'lede.headline_daily' if ctx.edition == 'daily' else 'lede.headline_period') }}
+{% endblock %}
+{% block content %}
+{% set top_tier = ctx.lede.top_tier if 'top_tier' in ctx.lede else (ctx.lede.top_score|tier) %}
+{% if ctx.entries and top_tier and top_tier not in ('S', 'A') %}
+<p class="notice">{{ t('sec.below_line', top=top_tier) }}</p>
+{% endif %}
+{% if ctx.entries %}
+{{ bands(ctx.entries) }}
+{# An empty issue has two causes and they read identically unless the page
+   separates them: the scorer judged the day and nothing stood out, or the
+   scorer never spoke. `sent` is not persisted, so a rebuilt page falls back
+   to `candidates`. #}
+{% elif ctx.lede.scored == 0 and (ctx.lede.sent or ctx.lede.candidates) %}
+<p class="notice">{{ t('sec.scorer_empty', sent=ctx.lede.sent or ctx.lede.candidates) }}</p>
+{% else %}
+<p class="notice">{{ t('sec.empty') }}</p>
+{% endif %}
+
+{# The Show HN board, on issues from before Show HN stopped being rated
+   (config.yaml `sources.hn`). Later issues have no Show HN rows, so the
+   board does not render. #}
+{% if ctx.hn_entries %}
+<section class="index band-hn" aria-labelledby="band-hn">
+  <h2 class="index-h" id="band-hn">Show HN <span class="board-k num">{{ ctx.hn_entries|length }}</span></h2>
+  {% for e in ctx.hn_entries %}{{ entry(e, e.tier if 'tier' in e else (e.score|tier)) }}{% endfor %}
+</section>
+{% endif %}
+
+{{ boards(ctx.gain_board, ctx.hot_new) }}
+{{ trending_boards(ctx.trending) }}
+
+{# Walk the archive one issue at a time. Both ends are always rendered so the
+   end of the chain says so in words; the hint names the keys pager.js binds. #}
+<nav class="pager" aria-label="{{ t('nav.' ~ ctx.edition) }}">
+  {% if pager.prev %}<a class="pg-prev" href="{{ pager.prev.url }}" rel="prev"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M13 8H3M7 4L3 8l4 4"/></svg>{{ t('pager.prev') }} <b>{{ pager.prev.label }}</b></a>
+  {% else %}<span class="pg-prev pg-end">{{ t('pager.oldest') }}</span>{% endif %}
+  {% if pager.prev or pager.next %}<span class="pg-hint">{{ t('pager.hint') }}</span>{% else %}<span></span>{% endif %}
+  {% if pager.next %}<a class="pg-next" href="{{ pager.next.url }}" rel="next">{{ t('pager.next') }} <b>{{ pager.next.label }}</b><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
+  {% else %}<span class="pg-next pg-end">{{ t('pager.newest') }}</span>{% endif %}
+</nav>
+{% endblock %}
+{% block footright %}{{ t('foot.generated') }} {{ ctx.date }} · {{ ctx.edition_label }}{% endblock %}

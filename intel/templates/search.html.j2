@@ -1,0 +1,15 @@
+{% extends "_base.html.j2" %}
+{% block title %}tierlist.tech {{ t('search.title') }}{% endblock %}
+{% block content %}
+<header class="page-h"><h1>{{ t('search.title') }}</h1></header>
+<div class="sr-box">
+  <input id="sr-q" type="search" autocomplete="off"
+         placeholder="{{ t('search.placeholder') }}"
+         aria-label="{{ t('search.placeholder') }}">
+</div>
+<p class="sr-count" id="sr-count"></p>
+<div class="tlist" id="sr-list"></div>
+<p class="sr-note">{{ t('search.index_note') }}</p>
+<script src="{{ ctx.p }}/search.js?v={{ asset_v.search }}" defer></script>
+{% endblock %}
+{% block footright %}{{ ctx.p }}/search/{% endblock %}

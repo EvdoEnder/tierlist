@@ -1,0 +1,25 @@
+{% extends "_base.html.j2" %}
+{% from "_parts.html.j2" import tier_mark, entry_line with context %}
+{% block title %}tierlist.tech · {{ tier }} · {{ month }}{% endblock %}
+{% block description %}{{ t('tiers.page_desc', tier=tier, month=month, n=entries|length) }}{% endblock %}
+{# One tier, one month: every repository whose latest rating landed in this
+   tier during the month, newest first, in the folded rows the issue pages
+   use. The switcher moves between tiers, the month bar between months. #}
+{% block content %}
+<header class="page-h tier-h">
+  {{ tier_mark(tier) }}
+  <h1>{{ t('tier.' ~ tier) }}<span class="page-n num">{{ entries|length }}</span></h1>
+  <p class="page-sub num">{{ month }}</p>
+</header>
+<nav class="tier-switch" aria-label="{{ t('tiers.switch') }}">
+  <a href="{{ ctx.p }}/tiers/">{{ t('tiers.all') }}</a>
+  {% for tr in tiers %}<a href="{{ tr.url }}"{% if tr.tier == tier %} class="on" aria-current="page"{% endif %}>{{ tr.tier }} <span class="num">{{ tr.total }}</span></a>{% endfor %}
+</nav>
+<nav class="tier-months" aria-label="{{ t('tiers.months') }}">
+  {% for m in months %}<a href="{{ m.url }}"{% if m.month == month %} class="on" aria-current="page"{% endif %}>{{ m.month }} <span class="num">{{ m.n }}</span></a>{% endfor %}
+</nav>
+<div class="band-fold tier-list" open>
+  <ul class="elines">{% for e in entries %}{{ entry_line(e, tier) }}{% endfor %}</ul>
+</div>
+{% endblock %}
+{% block footright %}{{ ctx.p }}/tiers/{{ tier|lower }}/{{ month }}.html{% endblock %}

@@ -1,0 +1,93 @@
+vertical: dev_tools
+
+# 每维 0-25,由模型判;总分 = 加权归一化到 0-100(调用方算),只存库，对外只显示等级。
+dimensions:
+  novelty: "新意：它解决的问题或解决的方式，是不是这两年没人做好过?又一个
+    ChatGPT 套壳、todo-app、awesome 清单、框架脚手架，记低分。"
+  utility: "可用：一个开发者今天能不能装上就用?看描述是否说清了它做什么、
+    给谁用、怎么开始;只有愿景没有用法的，记低分。"
+  craft: "分寸：范围是否清楚克制、命名和描述是否诚实准确、有没有夸大其词。
+    一句话讲清一件事的项目高于什么都想做的项目。"
+  momentum: "动能:star 增速、建库天数、是否已有真实使用迹象。只把它当证据，
+    不当结论：刷星、蹭名字、蹭热点带来的星数不算。"
+
+# 口味：像一位挑剔的开源编辑，推荐值得同行花十分钟看的项目。
+# 不再看商业化;动能降权，避免榜单变成星数排行。
+weights:
+  novelty: 1.2
+  utility: 1.2
+  craft: 1.0
+  momentum: 0.8
+
+prompt_head: |
+  你是一位资深开源编辑，替每天来看榜的开发者把关。读者很忙、眼光很高：
+  他们想知道今天新出现的开源项目里，哪几个真正值得花十分钟去看。
+
+  下面是一批近三天创建的 GitHub 仓库(非 fork、有 README),每条带语言、
+  当时的 star 数和建库天数。逐个按四个维度打分(每维 0-25),判定 watch/skip。
+
+  你的口味：
+  - 偏爱把一件具体的事做好的项目;一个干净的小工具高于一个空洞的大平台。
+  - 偏爱新问题或新解法;对「又一个某某」保持怀疑。
+  - 重视诚实：描述准确、不夸张。营销腔、空泛愿景、满屏 emoji 是减分项。
+  - star 只是证据之一。刚建一天的小项目可以很好，几千星的项目也可以很平庸。
+
+  一律记低分(总分落在 D 级)的:刷星或抢注镜像;破解、外挂、盗版、绕过付费墙;
+  纯内容仓库(提示词合集、资源清单、教程笔记);课程作业和个人练手;
+  没有说明它做什么的仓库。
+
+  reason 写 50-100 字，像编辑给同行的一句推荐语，说清三件事：它是什么、
+  对谁有用;凭什么值得(或不值得)注意;最大的局限或最接近的现有替代品。
+  不谈融资、变现、商业模式;不用「革命性」「颠覆」「神器」这类词;
+  不复述项目描述。
+
+thresholds:
+  watch_min: 60          # 加权总分 >= 60 判 watch(只在库里，不对外)
+
+# 公开展示的等级：加权总分 >= 线即为该级，低于 C 线为 D。线由 2026-09-23 至
+# 2026-10-22 的 914 个 GitHub 项目用本口味影子重跑的分数，按 98/90/70/40 分位
+# 定出(前 2% 为 S,前 10% 为 A,前 30% 为 B,前 60% 为 C),操作者 2026-10-23 拍板。
+# 分数只留在数据库里，页面、feed 和推送只显示等级。
+tiers:
+  S: 69
+  A: 58
+  B: 44
+  C: 29
+
+# 旧口味打出的分数沿用它自己的线。分数行的 dims 键集合与这里的 dims 完全相同时，
+# 用这一组线换算;旧刊因此保持原来的等级。线由 2026-08-23 至 2026-10-22 全部
+# 2,336 个已打分项目的 98/90/70/40 分位定出。
+legacy_tiers:
+  - dims: [novelty, utility, momentum, commercial]
+    S: 77
+    A: 65
+    B: 53
+    C: 39
+
+# 站点「关于评级」页原样展示。
+tier_definitions:
+  zh:
+    S: "少见的好项目：新、能马上用、做得克制，值得今天就去看。"
+    A: "明显值得关注，有一处短板。"
+    B: "有真实亮点，但场景窄、替代品强或还很早。"
+    C: "能用，但不新;或者新，但看不出谁会用。"
+    D: "不值得花时间：重复造轮子、内容清单、刷星、破解，或说不清自己做什么。"
+  en:
+    S: "Rare: new, usable today and well scoped. Worth a look now."
+    A: "Clearly worth watching, with one weak spot."
+    B: "A real strength, but narrow, early or up against strong alternatives."
+    C: "Usable but not new, or new without a clear user."
+    D: "Not worth the time: a rewrite of something that exists, a content list, bought stars, a crack, or no clear purpose."
+
+# 站点「文档」页展示的维度名和一句话说明。维度键必须与 dimensions 相同。
+public_dimensions:
+  zh:
+    novelty: ["新意", "解决的问题或解决的方式，是不是这两年没人做好过。又一个套壳、todo-app、清单、脚手架，记低分。"]
+    utility: ["可用", "一个开发者今天能不能装上就用：描述是否说清了它做什么、给谁用、怎么开始。"]
+    craft: ["分寸", "范围是否清楚克制，命名和描述是否诚实准确，有没有夸大其词。"]
+    momentum: ["动能", "星数增速、建库天数、真实使用的迹象。只当证据，不当结论；刷星和蹭热点的星不算。"]
+  en:
+    novelty: ["Novelty", "Is the problem, or the way it is solved, one nobody has done well lately? Another wrapper, todo app, list or scaffold scores low."]
+    utility: ["Usability", "Could a developer install it and use it today: does the description say what it does, who it is for and how to start?"]
+    craft: ["Craft", "Is the scope clear and restrained, and are the name and description honest and accurate rather than inflated?"]
+    momentum: ["Momentum", "Star velocity, age and signs of real use. Evidence, never the verdict: bought stars and borrowed hype do not count."]

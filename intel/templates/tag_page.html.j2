@@ -1,0 +1,21 @@
+{% extends "_base.html.j2" %}
+{% block title %}tierlist.tech · #{{ tag_label(tag) }}{% endblock %}
+{% block content %}
+<header class="page-h"><h1>#{{ tag_label(tag) }}</h1><p class="page-sub num">{{ items|length }}</p></header>
+<div class="tlist">
+  {% for it in items %}
+  <div class="trow">
+    <span class="mono dt">{{ it.date }}</span>
+    <span class="n"><a href="{{ it.url }}" target="_blank" rel="noopener">{{ it.name }}</a></span>
+    {% set tr = it.tier if 'tier' in it else (it.score|tier) %}
+    {# Unrated: no ring, the cell stays empty. The word does not fit a 30px
+       ring, so it is kept for screen readers only. #}
+    {% if tr %}<span class="sc {% if tr in ('S', 'A') %}hi{% endif %}">{{ tr }}</span>{% else %}<span class="vh">{{ t('tags.unrated') }}</span>{% endif %}
+    {% if it.description %}<span class="d">{{ desc(it.url, it.description, 700) }}</span>{% endif %}
+  </div>
+  {% else %}
+  <p class="pending">{{ t('tags.empty_page') }}</p>
+  {% endfor %}
+</div>
+{% endblock %}
+{% block footright %}{{ ctx.p }}/tags/{{ tag|tagurl }}.html{% endblock %}

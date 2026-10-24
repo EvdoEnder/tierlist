@@ -1,0 +1,40 @@
+{% extends "_base.html.j2" %}
+{% from "_parts.html.j2" import tier_mark with context %}
+{% block title %}tierlist.tech {{ t('tiers.title') }}{% endblock %}
+{% block description %}{{ t('tiers.lede') }}{% endblock %}
+{# Every repository ever rated, once each, at the tier of its latest rating.
+   One card per tier opens its newest month; the grid below opens any
+   month of any tier. #}
+{% block content %}
+<header class="page-h"><h1>{{ t('tiers.title') }}<span class="page-n num">{{ tiers|sum(attribute='total') }}</span></h1></header>
+<p class="doc-lede">{{ t('tiers.lede') }}</p>
+<div class="tier-cards">
+  {% for tr in tiers %}
+  <a class="tier-card" href="{{ tr.url }}">
+    {{ tier_mark(tr.tier) }}
+    <span class="tc-name">{{ t('tier.' ~ tr.tier) }}</span>
+    <span class="tc-n num">{{ tr.total }}</span>
+  </a>
+  {% endfor %}
+</div>
+{% if months %}
+<section class="doc tier-grid-wrap" aria-labelledby="tg-h">
+  <h2 class="doc-h" id="tg-h">{{ t('tiers.by_month') }}</h2>
+  <table class="tier-grid num">
+    <thead><tr><th scope="col">{{ t('tiers.month') }}</th>{% for tr in tiers %}<th scope="col">{{ tr.tier }}</th>{% endfor %}</tr></thead>
+    <tbody>
+      {% for m in months %}
+      <tr><th scope="row">{{ m }}</th>
+        {% for tr in tiers %}{% set n = tr.counts.get(m, 0) %}
+        <td>{% if n %}<a href="{{ ctx.p }}/tiers/{{ tr.tier|lower }}/{{ m }}.html">{{ n }}</a>{% else %}<span class="tg-0">0</span>{% endif %}</td>
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% else %}
+<p class="pending">{{ t('tiers.empty') }}</p>
+{% endif %}
+{% endblock %}
+{% block footright %}{{ ctx.p }}/tiers/{% endblock %}

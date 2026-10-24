@@ -1,0 +1,112 @@
+{% extends "_base.html.j2" %}
+{% from "_parts.html.j2" import tier_mark with context %}
+{% set D = ctx.docs %}
+{% set en = ctx.lang == 'en' %}
+{% block title %}tierlist.tech {{ t('nav.docs') }}{% endblock %}
+{% block description %}{% if en %}How tierlist.tech finds new GitHub repositories, judges them and turns the judgement into a tier.{% else %}tierlist.tech 怎样找到新的 GitHub 仓库、怎样评判，又怎样换算成等级。{% endif %}{% endblock %}
+{# How the boards are made. Every number comes from `ctx.docs`
+   (deliver.site.docs_facts), which reads the rubric and config.yaml, so the
+   prose never states a threshold the pipeline does not apply. #}
+{% block content %}
+<header class="page-h"><h1>{% if en %}How it works{% else %}排行榜是怎么来的{% endif %}</h1></header>
+
+<p class="doc-lede">{% if en -%}
+Every day at 00:00 UTC, tierlist.tech reads the GitHub repositories created in the last {{ D.lookback_hours }} hours, removes the ones with bought stars, and has a language model judge every one that is left against a published rubric. The judgement becomes a tier from S to D with one line of reasoning. Nobody picks or edits the results by hand.
+{%- else -%}
+每天 00:00 UTC，tierlist.tech 读取最近 {{ D.lookback_hours }} 小时新建的 GitHub 仓库，去掉刷星的，剩下的全部交给一个大语言模型按公开的评分标准逐个评判，换算成 S 到 D 的等级，并附一句理由。结果没有人工挑选或修改。
+{%- endif %}</p>
+
+<ol class="doc-steps">
+  <li class="doc">
+    <h2 class="doc-h"><span class="doc-n num">1</span>{% if en %}Collect{% else %}收集{% endif %}</h2>
+    {% if en %}
+    <p>A GitHub search for repositories created in the window that are not forks, not archived and have a README, most-starred first, up to about {{ D.fetch_ceiling }} repositories a day.</p>
+    {% else %}
+    <p>在 GitHub 搜索这段时间里新建的仓库：不是 fork、没有归档、带 README，按星数从高到低，每天最多读约 {{ D.fetch_ceiling }} 个。</p>
+    {% endif %}
+  </li>
+  <li class="doc">
+    <h2 class="doc-h"><span class="doc-n num">2</span>{% if en %}Remove bought stars, for free{% else %}去掉刷星（不花钱）{% endif %}</h2>
+    <ul class="doc-list">
+      {% if en %}
+      {% if D.min_description_chars %}<li>The description has at least {{ D.min_description_chars }} characters.</li>{% endif %}
+      {% if D.min_star_velocity %}<li>At least {{ D.min_star_velocity }} stars a day since creation (a repository younger than half a day counts as half a day old).</li>{% endif %}
+      <li>Bought stars: when {{ D.farm_cluster }} or more repositories share an identical star count and were created within {{ D.farm_window }} minutes of each other, the whole batch is dropped.</li>
+      <li>Every other repository is rated, with no star or description minimum. A repository with no description or no stars is the model's to judge, usually as D. A cap of {{ D.max_candidates }} a day guards against a source misbehaving.</li>
+      {% else %}
+      {% if D.min_description_chars %}<li>描述至少 {{ D.min_description_chars }} 个字符。</li>{% endif %}
+      {% if D.min_star_velocity %}<li>从建库算起，每天至少 {{ D.min_star_velocity }} 颗星（建库不到半天按半天算）。</li>{% endif %}
+      <li>刷星检测：{{ D.farm_cluster }} 个以上仓库星数完全相同、建库时间又在 {{ D.farm_window }} 分钟之内，整批剔除。</li>
+      <li>其余的全部评级，不设星数或描述门槛；没有描述、没有星的仓库交给模型判断，通常是 D。每天上限 {{ D.max_candidates }} 个，只为防止某个来源出错。</li>
+      {% endif %}
+    </ul>
+  </li>
+  <li class="doc">
+    <h2 class="doc-h"><span class="doc-n num">3</span>{% if en %}Judge{% else %}评判{% endif %}</h2>
+    {% if en %}
+    <p>The model reads like a demanding open-source editor: one small tool done well beats an empty platform, and stars are evidence, not the verdict. It scores four dimensions from 0 to 25, which are weighted into an internal score. That score is never published; only the tier is.</p>
+    {% else %}
+    <p>模型的口味像一位挑剔的开源编辑：一个把事做好的小工具胜过一个空洞的大平台，星数只是证据不是结论。它给四个维度各打 0–25 分，再加权成一个内部分数。这个分数不公开，对外只显示等级。</p>
+    {% endif %}
+    <table class="doc-table">
+      <thead><tr><th>{% if en %}Dimension{% else %}维度{% endif %}</th><th>{% if en %}What it asks{% else %}看什么{% endif %}</th><th class="r">{% if en %}Weight{% else %}权重{% endif %}</th></tr></thead>
+      <tbody>
+      {% for d in D.dimensions %}
+      <tr><td class="doc-k">{{ d.name }}</td><td>{{ d.text }}</td><td class="r num">×{{ d.weight }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% if en %}
+    <p class="doc-note">Always rated D: bought stars or squatted mirrors; cracks, cheats, piracy or paywall bypasses; pure content (prompt collections, resource lists, tutorial notes); coursework and practice projects; repositories that do not say what they do.</p>
+    {% else %}
+    <p class="doc-note">一律落在 D 级的：刷星或抢注镜像；破解、外挂、盗版、绕过付费墙；纯内容仓库（提示词合集、资源清单、教程笔记）；课程作业和练手项目；说不清自己做什么的仓库。</p>
+    {% endif %}
+  </li>
+  <li class="doc">
+    <h2 class="doc-h"><span class="doc-n num">4</span>{% if en %}Tier{% else %}换算成等级{% endif %}</h2>
+    {% if en %}
+    <p>The lines are percentiles of this rubric's own scores, measured on 30 days of repositories: the top 2% are S, the top 10% A, the top 30% B, the top 60% C, the rest D.</p>
+    {% else %}
+    <p>分数线取自这套评分标准自己在 30 天项目上的分数分布：前 2% 为 S，前 10% 为 A，前 30% 为 B，前 60% 为 C，其余为 D。</p>
+    {% endif %}
+    <dl class="doc-tiers">
+      {% for tr in ['S', 'A', 'B', 'C', 'D'] %}
+      <div class="doc-tier">
+        <dt>{{ tier_mark(tr) }}</dt>
+        <dd><b>{{ t('tier.' ~ tr) }}</b> {{ D.definitions[tr] }}</dd>
+      </div>
+      {% endfor %}
+    </dl>
+  </li>
+</ol>
+
+<section class="doc doc-boards">
+  <h2 class="doc-h">{% if en %}What each board is{% else %}每个榜单是什么{% endif %}</h2>
+  <dl class="doc-defs">
+    {% if en %}
+    <dt>Today's picks</dt><dd>Every repository rated that day, best first. S and A open on the board; B, C and D fold.</dd>
+    <dt>Weekly and monthly</dt><dd>Every repository rated in the window, taken at its best rating, up to {{ D.top_n }}.</dd>
+    <dt>Hot new repositories</dt><dd>The day's new repositories by stars, after the bought-star check. Not rated.</dd>
+    <dt>Star gain</dt><dd>Stars gained over the last 1, 7 or 30 days, from a star snapshot taken every day.</dd>
+    <dt>GitHub trending</dt><dd>github.com/trending for the day, week and month, in GitHub's own order. Not rated.</dd>
+    {% else %}
+    <dt>今日精选</dt><dd>当天评过级的全部仓库，按评判从好到差。S 和 A 直接展开，B、C、D 折叠。</dd>
+    <dt>每周、每月</dt><dd>窗口内评过级的每个仓库取它最好的一次，最多 {{ D.top_n }} 个。</dd>
+    <dt>新仓库热榜</dt><dd>当天抓到的新仓库按星数排，已剔除刷星，不评级。</dd>
+    <dt>star 增速榜</dt><dd>最近 1、7 或 30 天新增的星数，来自每天一次的星数快照。</dd>
+    <dt>GitHub 热门</dt><dd>github.com/trending 的今日、本周、本月榜，照 GitHub 原来的顺序，不评级。</dd>
+    {% endif %}
+  </dl>
+</section>
+
+<section class="doc doc-boards">
+  <h2 class="doc-h">{% if en %}Open by default{% else %}公开透明{% endif %}</h2>
+  {% if en %}
+  <p>Every issue states how many repositories were read, how many passed the filter, how many were rated, what the model cost and which model it was. Every past issue stays readable in the archive at the same address. Issues from before this rubric were rated under an earlier one, and their tiers use that rubric's own lines. Each language has its own Atom feed.{% if features.json_api %} Every issue, tag and rated repository is also a JSON document under /api/v1/, free to use.{% endif %}{% if features.funding_page %} The model's spend is published on the funding page.{% endif %} The whole engine is open source, so anyone can run their own copy.</p>
+  {% else %}
+  <p>每一期都写明读了多少仓库、粗筛留下多少、评了多少级、模型花了多少钱、用的是哪个模型。所有往期都永久保留在归档里，网址不变。早于这套评分标准的期数用的是更早的一版，它们的等级按那一版自己的分数线换算。中文和英文各有一个 Atom 订阅源。{% if features.json_api %}每一期、每个标签、每个评过级的仓库在 /api/v1/ 下都有一份 JSON，可以随便用。{% endif %}{% if features.funding_page %}模型的花费公开在资助页。{% endif %}整个程序开源，任何人都可以自己跑一份。</p>
+  {% endif %}
+  <p class="doc-links"><a href="{{ ctx.nav['archive'] }}">{{ t('nav.archive') }}</a><a href="{{ ctx.p }}/feed.xml">{{ t('nav.rss') }}</a><a href="{{ ctx.p }}/connect/">{{ t('nav.connect') }}</a>{% if features.json_api %}<a href="/api/v1/latest.json">{{ t('nav.api') }}</a>{% endif %}{% if features.funding_page %}<a href="{{ ctx.p }}/funding/">{{ t('nav.funding') }}</a>{% endif %}{% if repo_url %}<a href="{{ repo_url }}" rel="noopener">GitHub</a>{% endif %}</p>
+</section>
+{% endblock %}
+{% block footright %}{{ ctx.p }}/docs/{% endblock %}

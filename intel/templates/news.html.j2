@@ -1,0 +1,23 @@
+{% extends "_base.html.j2" %}
+{% block title %}tierlist.tech {{ t('news.title') }}{% endblock %}
+{% block lede %}
+<header class="page-h"><h1>{{ t('news.title') }}</h1>
+  <p class="page-sub">{{ t('news.lede') }} · {{ t('news.updated_at', ts=ctx.updated_ts) }}</p></header>
+{% endblock %}
+{% block content %}
+<div class="news-all">
+  {% for n in ctx.news_rows %}
+  <div class="newsitem">
+    <span class="nsrc">{{ n.source }}</span>
+    <div class="nsi">
+      <a class="nsi-title" href="{{ n.url }}" target="_blank" rel="noopener">{{ n.title }}</a>
+      {% if n.summary %}<p class="nsi-desc">{{ n.summary }}</p>{% endif %}
+    </div>
+    <span class="nsi-meta">{{ n.published }} · {{ t('news.points', n=n.points) }}</span>
+  </div>
+  {% else %}
+  <p class="pending">{{ t('news.empty') }}</p>
+  {% endfor %}
+</div>
+{% endblock %}
+{% block footright %}{{ t('foot.updated') }} {{ ctx.updated_ts }} UTC{% endblock %}

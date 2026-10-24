@@ -1,0 +1,202 @@
+{# Shared markup, imported by issue.html.j2 and landing.html.j2 (`with
+   context`, so `t` and `ctx` come from the page). One copy per piece: the
+   daily, weekly and monthly pages render the same entries and boards.
+
+   The page is an index: one white board laid on the stone ground, one row
+   per repository. S and A share the main board; B, C and D fold into one
+   summary row each, so a two-minute visit ends where the main board ends. #}
+
+{# The tier mark: the letter in a circle. Each tier is drawn differently so
+   it still reads without colour or at a glance: S filled, A a dark ring,
+   B a light ring, C a hairline ring, D a dashed ring. The class is built
+   from the tier: tm-s, tm-a, tm-b, tm-c, tm-d. #}
+{% macro tier_mark(tr, size=44) -%}
+<span class="tm tm-{{ tr|lower }}{% if size < 30 %} tm-sm{% endif %}" role="img" aria-label="{{ t('card.tier', tier=tr) }}">{{ tr }}</span>
+{%- endmacro %}
+
+{# A repository's language. The store keeps 语言未知 for a repository
+   GitHub reports none; the page shows it in its own language. #}
+{% macro lang_text(lang) -%}
+{{ t('card.lang_unknown') if lang == '语言未知' else lang }}
+{%- endmacro %}
+
+{# One row of the board. A GitHub name is owner/repo: the repository is the
+   headline and the owner joins the meta line. A Show HN title (issues before
+   2026-10-23) has no owner and is shown whole. The name's link covers the
+   row; tags sit above it so they stay clickable. #}
+{% macro entry(e, tr) -%}
+{% set parts = e.name.split('/', 1) if e.source != 'hn' else [] %}
+<article class="entry">
+  <div class="e-mark">{{ tier_mark(tr) }}</div>
+  <div class="e-head">
+    <h3 class="e-name"><a href="{{ e.url }}" target="_blank" rel="noopener">{{ parts[1] if parts|length == 2 else e.name }}</a></h3>
+    <p class="e-meta">
+      {%- if parts|length == 2 %}<span>{{ parts[0] }}</span>{% endif -%}
+      {%- if e.lang %}<span>{{ lang_text(e.lang) }}</span>{% endif -%}
+      {%- if e.source == 'hn' %}<span>Show HN</span>{% endif -%}
+    </p>
+  </div>
+  <div class="e-body">
+    {% if e.reason %}<p class="e-reason">{{ e.reason }}</p>{% endif %}
+    {% if e.description %}<p class="e-desc">{{ desc(e.url, e.description) }}</p>{% endif %}
+    {% if e.tags %}
+    <p class="e-tags">{% for tg in e.tags %}<a href="{{ ctx.p }}/tags/{{ tg|tagurl }}.html">#{{ tag_label(tg) }}</a>{% endfor %}</p>
+    {% endif %}
+  </div>
+  <p class="e-stat num">{{ e.metric or '★' ~ e.stars }}</p>
+</article>
+{%- endmacro %}
+
+{# A folded row: mark, name, the reason in two lines and the tags. Clicking
+   the row opens it in place: the whole reason, the repository's own
+   description, owner, language and stars. The name still goes to the
+   repository and each tag to its page; any other click toggles. #}
+{% macro entry_line(e, tr) -%}
+{% set parts = e.name.split('/', 1) if e.source != 'hn' else [] %}
+<li class="eline"><details class="el">
+  <summary class="el-sum">
+    {{ tier_mark(tr, 28) }}
+    <a class="el-name" href="{{ e.url }}" target="_blank" rel="noopener">{{ parts[1] if parts|length == 2 else e.name }}</a>
+    <span class="el-body">
+      {% if e.reason %}<span class="el-reason">{{ e.reason }}</span>{% endif %}
+      {% if e.tags %}<span class="el-tags">{% for tg in e.tags %}<a href="{{ ctx.p }}/tags/{{ tg|tagurl }}.html">#{{ tag_label(tg) }}</a>{% endfor %}</span>{% endif %}
+    </span>
+    <svg class="el-chev" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg>
+  </summary>
+  <div class="el-more">
+    {% if e.description %}<p class="el-desc">{{ desc(e.url, e.description) }}</p>{% endif %}
+    <p class="el-meta">
+      {%- if parts|length == 2 %}<span>{{ parts[0] }}</span>{% endif -%}
+      {%- if e.lang %}<span>{{ lang_text(e.lang) }}</span>{% endif -%}
+      {%- if e.source == 'hn' %}<span>Show HN</span>{% endif -%}
+      <span class="num">{{ e.metric or '★' ~ e.stars }}</span>
+      {%- if e.day %}<a class="num" href="{{ e.day_url }}">{{ t('tiers.rated_on', day=e.day) }}</a>{% endif -%}
+    </p>
+  </div>
+</details></li>
+{%- endmacro %}
+
+{# Entries → the main board (S and A) and one folded board per lower tier.
+   `entries` arrive score-ordered, so each tier keeps that order. The end
+   line sits after the main board, which is where the daily read stops. #}
+{% macro bands(entries) -%}
+{% set groups = {} %}
+{% for tr in ['S', 'A', 'B', 'C', 'D'] %}
+  {% set rows = [] %}
+  {% for e in entries %}{% set et = e.tier if 'tier' in e else (e.score|tier) %}{% if et == tr %}{% set _ = rows.append(e) %}{% endif %}{% endfor %}
+  {% set _ = groups.update({tr: rows}) %}
+{% endfor %}
+{% if groups['S'] or groups['A'] %}
+<div class="index">
+  {% for tr in ['S', 'A'] %}{% if groups[tr] %}
+  <section class="band band-{{ tr|lower }}" aria-labelledby="band-{{ tr|lower }}">
+    <h2 class="vh" id="band-{{ tr|lower }}">{{ tr }} · {{ t('tier.' ~ tr) }}</h2>
+    {% for e in groups[tr] %}{{ entry(e, tr) }}{% endfor %}
+  </section>
+  {% endif %}{% endfor %}
+</div>
+<p class="end-line">{{ t('end.today') }}</p>
+{% endif %}
+{% if groups['B'] or groups['C'] or groups['D'] %}
+<div class="folds">
+  {% for tr in ['B', 'C', 'D'] %}{% if groups[tr] %}
+  <details class="band-fold band-{{ tr|lower }}">
+    <summary class="band-h">{{ tier_mark(tr, 28) }}<span class="band-n">{{ t('tier.' ~ tr) }}</span><span class="band-count num">{{ groups[tr]|length }}</span><svg class="chev" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg></summary>
+    <ul class="elines">{% for e in groups[tr] %}{{ entry_line(e, tr) }}{% endfor %}</ul>
+  </details>
+  {% endif %}{% endfor %}
+</div>
+{% endif %}
+{%- endmacro %}
+
+{# The boards below the index: hot new repositories, star gain and, on the
+   landing, the latest news. Each renders only when its data exists. #}
+{% macro boards(gain_board, hot_new, news_rows=None) -%}
+<div class="boards">
+  {% if hot_new %}
+  <section class="board">
+    <h2 class="board-h">{{ t('board.hot_new') }}</h2>
+    <ol class="rows">
+      {% for h in hot_new %}
+      <li class="row"><a class="r-name" href="{{ h.url }}" target="_blank" rel="noopener">{{ h.name|slashbreak }}</a><span class="r-v num">★{{ h.stars }}</span>
+        {% if h.description %}<span class="r-d">{{ desc(h.url, h.description, 700) }}</span>{% endif %}</li>
+      {% endfor %}
+    </ol>
+  </section>
+  {% endif %}
+  <section class="board">
+    <h2 class="board-h">{{ t('board.gain_h') }} <span class="board-k">{{ gain_board.window_days }}d</span></h2>
+    {% if gain_board.ready and gain_board.rows %}
+    <ol class="rows">
+      {% for r in gain_board.rows %}
+      <li class="row"><a class="r-name" href="{{ r.url }}" target="_blank" rel="noopener">{{ r.name|slashbreak }}</a><span class="r-v num">+{{ r.gain }}</span><span class="r-s num">★{{ r.stars_now }}</span></li>
+      {% endfor %}
+    </ol>
+    {% else %}
+    <p class="quiet">{{ t('board.accumulating', need=gain_board.need, have=gain_board.have) }}</p>
+    {% endif %}
+  </section>
+  {% if news_rows %}
+  <section class="board">
+    <h2 class="board-h">{{ t('news.title') }}</h2>
+    <ol class="rows">
+      {% for n in news_rows[:6] %}
+      <li class="row"><a class="r-name" href="{{ n.url }}" target="_blank" rel="noopener">{{ n.title }}</a><span class="r-s">{{ n.source }}{% if n.published %} · {{ n.published }}{% endif %}</span></li>
+      {% endfor %}
+    </ol>
+    <a class="more" href="{{ ctx.nav['news'] }}">{{ t('nav.news') }}<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
+  </section>
+  {% endif %}
+</div>
+{%- endmacro %}
+
+{# GitHub Trending as GitHub ranks it: day, week, month. #}
+{% macro trending_boards(trending) -%}
+{% if trending %}
+<div class="boards boards-3">
+  {% for period in ['daily', 'weekly', 'monthly'] %}{% if trending[period] %}
+  <section class="board">
+    <h2 class="board-h">{{ t('trending.' ~ period) }}</h2>
+    <p class="board-note">{{ t('trending.kick') }}</p>
+    <ol class="rows">
+      {% for r in trending[period] %}
+      <li class="row"><a class="r-name" href="{{ r.url }}" target="_blank" rel="noopener">{{ r.name|slashbreak }}</a><span class="r-v num">+{{ r.gain }}</span><span class="r-s num">★{{ r.stars }}</span>
+        {% if r.tags %}<span class="r-tags">{% for tg in r.tags %}<a href="{{ ctx.p }}/tags/{{ tg|tagurl }}.html">#{{ tag_label(tg) }}</a>{% endfor %}</span>{% endif %}</li>
+      {% endfor %}
+    </ol>
+  </section>
+  {% endif %}{% endfor %}
+</div>
+{% endif %}
+{%- endmacro %}
+
+{# The head of an issue or the landing: the period set enormous as the
+   headline, the edition's name beside it in grey, the result as one
+   sentence, and the provenance (what was read, what it cost) as one quiet
+   line. `big` is the short form of the period: 10.22, W43, 2026.10. #}
+{% macro page_head(big, word, range_key, headline_key) -%}
+{% set L = ctx.lede %}
+<header class="edition">
+  <h1 class="ed-title"><span class="ed-big">{{ big }}</span> <span class="ed-word">{{ word }}</span></h1>
+  {% if L.new_count is not none and ctx.entries %}
+  <p class="ed-lede">{{ t(headline_key, found=L.new_count, n=ctx.entries|length) }}</p>
+  {% endif %}
+  <p class="ed-prov">
+    <span>{{ t(range_key) }} <span class="num">{{ L.window_from }} – {{ L.window_to }}</span></span>
+    {%- if L.fetched is not none %}<span>{{ t('lede.fetched') }} <span class="num">{{ L.fetched }}</span></span>{% endif -%}
+    {%- if L.candidates is not none %}<span>{{ t('lede.filtered') }} <span class="num">{{ L.candidates }}</span></span>
+    {%- elif L.sent is not none %}<span>{{ t('lede.sent') }} <span class="num">{{ L.sent }}</span></span>{% endif -%}
+    {%- if L.scored %}<span>{{ t('lede.scored') }} <span class="num">{{ L.scored }}</span></span>{% endif -%}
+    {%- if L.cost is not none %}<span>{{ t('lede.cost') }} <span class="num">{{ L.cost }}</span>{% if L.model %} · {{ L.model }}{% endif %}</span>{% endif -%}
+  </p>
+  <p class="since" id="since" hidden></p>
+</header>
+{%- endmacro %}
+
+{# The short form of a period label for the headline: 2026-10-22 → 10.22,
+   2026-W43 · 10-16 → 10-22 → W43, 2026-10 → 2026.10. #}
+{% macro period_big(edition, label) -%}
+{%- if edition == 'weekly' -%}{{ label.split(' ')[0].split('-')[-1] }}
+{%- elif edition == 'monthly' -%}{{ label.replace('-', '.') }}
+{%- else -%}{{ label[5:10].replace('-', '.') }}{%- endif -%}
+{%- endmacro %}

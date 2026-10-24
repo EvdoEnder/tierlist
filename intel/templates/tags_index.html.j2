@@ -1,0 +1,35 @@
+{% extends "_base.html.j2" %}
+{% block title %}tierlist.tech {{ t('tags.title') }}{% endblock %}
+{% block content %}
+<header class="page-h"><h1>{{ t('tags.all') }}<span class="page-n num">{{ total }}</span></h1></header>
+{# Topics under their vocabulary groups, then names A to Z. See
+   render_tags_index for how a tag lands in one or the other. #}
+{% if groups %}
+<section class="tgroups" aria-labelledby="tg-h">
+  <h2 class="tsec-h" id="tg-h">{{ t('tags.topics') }}<span class="band-count num">{{ n_topics }}</span></h2>
+  {% for g in groups %}
+  <div class="tgroup">
+    <h3 class="tgroup-h">{{ g.label }}</h3>
+    <div class="pills">{% for tg in g.tags %}<a class="{{ tg.tier }}" href="{{ tg.url }}">#{{ tag_label(tg.tag) }}<sup>{{ tg.count }}</sup></a>{% endfor %}</div>
+  </div>
+  {% endfor %}
+</section>
+{% elif not letters %}
+<section class="tgroups"><p class="pending">{{ t('tags.empty') }}</p></section>
+{% endif %}
+{% if letters %}
+<details class="band-fold names">
+  <summary class="band-h"><span class="band-n">{{ t('tags.names') }}</span><span class="band-count num">{{ n_names }}</span><svg class="chev" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg></summary>
+  <nav class="az" aria-label="{{ t('tags.jump') }}">{% for b in letters %}<a href="#{{ b.id }}">{{ b.label }}</a>{% endfor %}</nav>
+  <div class="az-list">
+    {% for b in letters %}
+    <section class="az-sec" id="{{ b.id }}">
+      <h3 class="az-h">{{ b.label }}</h3>
+      <div class="az-tags">{% for tg in b.tags %}<a href="{{ tg.url }}">#{{ tag_label(tg.tag) }}<sup>{{ tg.count }}</sup></a>{% endfor %}</div>
+    </section>
+    {% endfor %}
+  </div>
+</details>
+{% endif %}
+{% endblock %}
+{% block footright %}{{ ctx.p }}/tags/{% endblock %}

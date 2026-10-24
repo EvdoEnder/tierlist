@@ -1,0 +1,63 @@
+{% extends "_base.html.j2" %}
+{% set en = ctx.lang == 'en' %}
+{% block title %}tierlist.tech {{ t('nav.connect') }}{% endblock %}
+{% block description %}{% if en %}Ways to follow tierlist.tech today, the ones coming later, and how to run your own copy.{% else %}现在能怎样订阅 tierlist.tech、以后会开放哪些接入方式，以及怎样自己跑一份。{% endif %}{% endblock %}
+{# What a reader can plug into. Only what works today is a link; the rest is
+   named as coming later, with no date, because when they open depends on
+   how the site is used. #}
+{% block content %}
+<header class="page-h"><h1>{% if en %}Connect{% else %}接入{% endif %}</h1></header>
+
+<p class="doc-lede">{% if en -%}
+Read it on the site, follow the feed, or run your own copy. More ways to receive each day's tiers will open once it is clear how people use the site.
+{%- else -%}
+可以直接在网站上看、订阅 RSS，或者自己跑一份。等看清大家怎么用这个网站之后，会再开放更多接收每天评级的方式。
+{%- endif %}</p>
+
+<section class="doc">
+  <h2 class="doc-h">{% if en %}Available now{% else %}现在可用{% endif %}</h2>
+  <ul class="cn-list">
+    <li class="cn-row"><span class="cn-name">{% if en %}Atom feed{% else %}Atom 订阅源{% endif %}</span>
+      <span class="cn-text">{% if en %}Every rated repository of the last two weeks, in any feed reader. The Chinese site has its own feed.{% else %}最近两周评过级的仓库，任何 RSS 阅读器都能订阅。英文站另有一个订阅源。{% endif %}</span>
+      <a class="cn-state cn-on" href="{{ ctx.p }}/feed.xml">{{ ctx.p }}/feed.xml</a></li>
+    {% if features.json_api %}
+    <li class="cn-row"><span class="cn-name">JSON API</span>
+      <span class="cn-text">{% if en %}Every issue, tag and rated repository as static JSON.{% else %}每一期、每个标签、每个评过级的仓库，都是静态 JSON。{% endif %}</span>
+      <a class="cn-state cn-on" href="/api/v1/latest.json">/api/v1/</a></li>
+    {% endif %}
+  </ul>
+</section>
+
+<section class="doc doc-boards">
+  <h2 class="doc-h">{% if en %}Coming later{% else %}以后开放{% endif %}</h2>
+  <ul class="cn-list">
+    {% if not features.json_api %}
+    <li class="cn-row"><span class="cn-name">JSON API</span>
+      <span class="cn-text">{% if en %}Every issue, tag and rated repository as static JSON, free to call from your own code.{% else %}每一期、每个标签、每个评过级的仓库都做成静态 JSON，可以从自己的程序里直接调用。{% endif %}</span>
+      <span class="cn-state">{% if en %}Coming later{% else %}未来开放{% endif %}</span></li>
+    {% endif %}
+    <li class="cn-row"><span class="cn-name">Discord</span>
+      <span class="cn-text">{% if en %}An announcement channel your own server can follow, or a webhook that posts each day's tiers into a channel you choose.{% else %}一个公告频道，你自己的服务器可以「关注」它；或者用 webhook 把每天的评级发到你指定的频道。{% endif %}</span>
+      <span class="cn-state">{% if en %}Coming later{% else %}未来开放{% endif %}</span></li>
+    <li class="cn-row"><span class="cn-name">Telegram</span>
+      <span class="cn-text">{% if en %}A channel that posts each day's S and A tiers.{% else %}一个频道，每天推送当天的 S 级和 A 级。{% endif %}</span>
+      <span class="cn-state">{% if en %}Coming later{% else %}未来开放{% endif %}</span></li>
+    <li class="cn-row"><span class="cn-name">Webhook</span>
+      <span class="cn-text">{% if en %}Register your own URL and receive each day's issue as JSON when it is published.{% else %}登记你自己的网址，每天出刊时把当天的数据以 JSON 推给你。{% endif %}</span>
+      <span class="cn-state">{% if en %}Coming later{% else %}未来开放{% endif %}</span></li>
+  </ul>
+</section>
+
+{% if repo_url %}
+<section class="doc doc-boards">
+  <h2 class="doc-h">{% if en %}Run your own{% else %}自己跑一份{% endif %}</h2>
+  {% if en %}
+  <p>The engine behind this site is open source under the MIT licence: the collectors, the rubric the model judges against, and the templates. You can run it with your own model and your own taste. The repository explains where to plug in a model, and ships instructions an AI coding agent such as Claude Code can follow to run the daily job for you.</p>
+  {% else %}
+  <p>本站背后的程序以 MIT 协议开源：抓取、模型评判用的评分标准、网页模板都在里面。你可以换成自己的模型、自己的口味来跑。仓库里写了模型从哪里接入，也附了一份 AI 编程助手(比如 Claude Code)照着就能替你跑每日任务的说明。</p>
+  {% endif %}
+  <p class="fund-give"><a class="fund-btn" href="{{ repo_url }}" rel="noopener">{% if en %}View on GitHub{% else %}在 GitHub 查看{% endif %}<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a></p>
+</section>
+{% endif %}
+{% endblock %}
+{% block footright %}{{ ctx.p }}/connect/{% endblock %}

@@ -1,0 +1,398 @@
+# The controlled tag vocabulary.
+#
+# A tag exists to gather projects together. Before this file the model was
+# told "短中文主题词或小写英文技术词" and invented a fresh word per project:
+# 266 tags over 114 items, 229 of them used exactly once, and all 17 `crack`
+# items also carried `破解` because either language was allowed. A tag that
+# names one project gathers nothing.
+#
+# Two tiers, because the two failures have different cures:
+#
+#   topics   — CLOSED. The model picks 2-4 of these and may not invent one.
+#              This is what clusters, so this is what must be finite.
+#   entities — OPEN, at most 2. Proper nouns: products, protocols, games,
+#              formats (valorant, ffmpeg, x64dbg). A singleton here is
+#              correct — /tags/valorant.html is meant to hold one project —
+#              and closing this tier would break the one lookup readers
+#              actually perform.
+#
+# Slugs are ASCII and are both the filename and the URL. `zh`/`en` are
+# display only, so /tags/crack.html reads 破解 on the Chinese site and Crack
+# on the English one instead of shipping Chinese tags onto English pages.
+#
+# NOT in the vocabulary, deliberately:
+#   * Programming languages. Every entry already prints the repo's language
+#     beside its stars (`★569 · Zig`), so a `rust` tag is a second copy of a
+#     field the reader is already looking at.
+#   * Anything a rubric dimension already scores.
+#
+# `aliases` maps what the model actually emitted — including both halves of
+# every bilingual pair — onto a slug. It is the model's spell-checker, and a
+# `null` target means "drop this, it carries no signal" (开源, 源码, meta).
+
+version: 1
+
+# A `group` row starts a heading on the tag index (/tags/); every topic
+# below it belongs to that group until the next one. Groups are display
+# only: the model is shown the topics, never the groups.
+topics:
+  - {group: ai, zh: 人工智能, en: AI}
+  - {slug: ai, zh: 人工智能, en: AI}
+  - {slug: llm, zh: 大模型, en: LLMs}
+  - {slug: ai-agent, zh: AI 智能体, en: AI Agents}
+  - {slug: agent-skill, zh: Agent 技能, en: Agent Skills}
+  - {slug: mcp, zh: MCP 协议, en: MCP}
+  - {slug: rag, zh: 检索增强, en: RAG}
+  - {slug: prompt, zh: 提示词, en: Prompting}
+  - {slug: image-gen, zh: AI 绘图, en: Image Generation}
+  - {slug: speech, zh: 语音, en: Speech}
+  - {slug: multimodal, zh: 多模态, en: Multimodal}
+  - {slug: ml-research, zh: 机器学习研究, en: ML Research}
+
+  - {group: grey, zh: 破解与外挂, en: Cracks & cheats}
+  - {slug: crack, zh: 破解, en: Crack}
+  - {slug: activation, zh: 激活绕过, en: Activation Bypass}
+  - {slug: jailbreak, zh: 越狱, en: Jailbreak}
+  - {slug: game-cheat, zh: 游戏外挂, en: Game Cheats}
+  - {slug: anti-cheat, zh: 反作弊, en: Anti-Cheat}
+  - {slug: piracy, zh: 盗版资源, en: Piracy}
+  - {slug: scam, zh: 灰产诈骗, en: Scams}
+  - {slug: nsfw, zh: 成人内容, en: Adult Content}
+
+  - {group: security, zh: 安全, en: Security}
+  - {slug: reverse-engineering, zh: 逆向工程, en: Reverse Engineering}
+  - {slug: debugging, zh: 调试, en: Debugging}
+  - {slug: exploit, zh: 漏洞利用, en: Exploits}
+  - {slug: appsec, zh: 应用安全, en: App Security}
+  - {slug: netsec, zh: 网络安全, en: Network Security}
+  - {slug: privacy, zh: 隐私, en: Privacy}
+  - {slug: secrets, zh: 密钥管理, en: Secrets}
+
+  - {group: games, zh: 游戏, en: Games}
+  - {slug: game, zh: 游戏, en: Games}
+  - {slug: game-dev, zh: 游戏开发, en: Game Dev}
+  - {slug: game-port, zh: 游戏移植, en: Game Porting}
+
+  - {group: media, zh: 媒体, en: Media}
+  - {slug: video, zh: 视频, en: Video}
+  - {slug: video-edit, zh: 视频剪辑, en: Video Editing}
+  - {slug: audio, zh: 音频, en: Audio}
+  - {slug: image, zh: 图像, en: Images}
+  - {slug: 3d, zh: 三维, en: 3D}
+  - {slug: animation, zh: 动画, en: Animation}
+  - {slug: streaming, zh: 直播点播, en: Streaming}
+  - {slug: download, zh: 下载工具, en: Downloaders}
+  - {slug: watermark, zh: 水印处理, en: Watermarks}
+
+  - {group: dev, zh: 开发工具, en: Developer tools}
+  - {slug: cli, zh: 命令行, en: CLI}
+  - {slug: terminal, zh: 终端, en: Terminal}
+  - {slug: editor, zh: 编辑器, en: Editors}
+  - {slug: plugin, zh: 插件扩展, en: Plugins}
+  - {slug: build, zh: 构建, en: Build}
+  - {slug: ci, zh: 持续集成, en: CI}
+  - {slug: testing, zh: 测试, en: Testing}
+  - {slug: code-quality, zh: 代码质量, en: Code Quality}
+  - {slug: benchmark, zh: 基准测试, en: Benchmarks}
+  - {slug: sdk, zh: SDK, en: SDKs}
+  - {slug: api, zh: API, en: APIs}
+  - {slug: devops, zh: 运维部署, en: DevOps}
+  - {slug: observability, zh: 可观测性, en: Observability}
+  - {slug: monitoring, zh: 监控告警, en: Monitoring}
+  - {slug: backup, zh: 备份, en: Backup}
+  - {slug: scheduler, zh: 定时任务, en: Scheduling}
+  - {slug: self-hosted, zh: 自托管, en: Self-Hosted}
+  - {slug: database, zh: 数据库, en: Databases}
+  - {slug: performance, zh: 性能优化, en: Performance}
+
+  - {group: platforms, zh: 平台, en: Platforms}
+  - {slug: windows, zh: Windows, en: Windows}
+  - {slug: macos, zh: macOS, en: macOS}
+  - {slug: linux, zh: Linux, en: Linux}
+  - {slug: ios, zh: iOS, en: iOS}
+  - {slug: android, zh: Android, en: Android}
+  - {slug: browser-extension, zh: 浏览器扩展, en: Browser Extensions}
+  - {slug: web-frontend, zh: 前端, en: Web Frontend}
+  - {slug: wasm, zh: WebAssembly, en: WebAssembly}
+  - {slug: gpu, zh: GPU, en: GPU}
+  - {slug: hardware, zh: 硬件, en: Hardware}
+  - {slug: embedded, zh: 嵌入式, en: Embedded}
+  - {slug: os, zh: 操作系统, en: Operating Systems}
+  - {slug: networking, zh: 网络代理, en: Networking}
+
+  - {group: work, zh: 工作与知识, en: Work & knowledge}
+  - {slug: automation, zh: 自动化, en: Automation}
+  - {slug: productivity, zh: 效率工具, en: Productivity}
+  - {slug: collaboration, zh: 团队协作, en: Collaboration}
+  - {slug: data-analysis, zh: 数据分析, en: Data Analysis}
+  - {slug: spreadsheet, zh: 表格, en: Spreadsheets}
+  - {slug: document, zh: 文档写作, en: Documents}
+  - {slug: presentation, zh: 演示文稿, en: Presentations}
+  - {slug: knowledge-base, zh: 知识库, en: Knowledge Base}
+  - {slug: learning, zh: 学习教程, en: Learning}
+  - {slug: accessibility, zh: 无障碍, en: Accessibility}
+  - {slug: email, zh: 邮件, en: Email}
+  - {slug: ui-design, zh: 界面设计, en: UI Design}
+  # A free or open-source stand-in for a named paid or closed product. The
+  # tag prompt narrows it to projects that name the product they replace;
+  # without that, every new tool is "an alternative to something".
+  - {slug: alternative, zh: 开源平替, en: Open-Source Alternatives}
+
+  - {group: domains, zh: 行业领域, en: Domains}
+  - {slug: crypto, zh: 加密货币, en: Crypto}
+  - {slug: blockchain, zh: 区块链, en: Blockchain}
+  - {slug: fintech, zh: 支付金融, en: Fintech}
+  - {slug: ecommerce, zh: 电商, en: E-commerce}
+  - {slug: marketing, zh: 营销增长, en: Marketing}
+  - {slug: social, zh: 社交平台, en: Social}
+  - {slug: jobs, zh: 求职招聘, en: Jobs}
+  - {slug: content-writing, zh: 内容创作, en: Content Writing}
+  - {slug: science, zh: 科研, en: Science}
+  - {slug: bio, zh: 生物科技, en: Biotech}
+  - {slug: robotics, zh: 机器人, en: Robotics}
+  - {slug: iot, zh: 物联网, en: IoT}
+  - {slug: health, zh: 健康健身, en: Health}
+
+# Every tag the corpus actually produced, mapped onto a slug. Both halves of
+# each bilingual pair land on the same one, which is what collapses
+# crack/破解 (17 items carried both) into a single page.
+aliases:
+  破解: crack
+  激活: activation
+  activator: activation
+  bypass: activation
+  越狱: jailbreak
+  游戏外挂: game-cheat
+  游戏辅助: game-cheat
+  作弊器: game-cheat
+  cheat: game-cheat
+  hack: game-cheat
+  trainer: game-cheat
+  mod: game-cheat
+  反作弊: anti-cheat
+  灰产: scam
+  钓鱼: scam
+  成人内容: nsfw
+  逆向: reverse-engineering
+  调试: debugging
+  重放: debugging
+  漏洞利用: exploit
+  沙盒逃逸: exploit
+  网络安全: netsec
+  安全: appsec
+  内容安全: appsec
+  行为验证: appsec
+  api-keys: secrets
+  API密钥: secrets
+  vault: secrets
+  游戏: game
+  游戏移植: game-port
+  static-recompilation: game-port
+  视频: video
+  短视频: video
+  视频编辑: video-edit
+  影视: streaming
+  movie: streaming
+  tv: streaming
+  直播: streaming
+  下载: download
+  水印清除: watermark
+  动画: animation
+  视觉效果: animation
+  3D场景: 3d
+  几何建模: 3d
+  重建: 3d
+  插图: image-gen
+  头像: image-gen
+  语音听写: speech
+  语音输入: speech
+  asr: speech
+  自动化: automation
+  定时任务: scheduler
+  流水线: ci
+  github actions: ci
+  质量门禁: code-quality
+  可观测性: observability
+  实时监控: monitoring
+  备份: backup
+  自托管: self-hosted
+  本地优先: self-hosted
+  本地web: self-hosted
+  基础设施: devops
+  发布: devops
+  前端发布: devops
+  运行时: os
+  操作系统: os
+  兼容: os
+  嵌入式: embedded
+  硬件: hardware
+  制造: hardware
+  电表: iot
+  蜂窝网关: iot
+  浏览器扩展: browser-extension
+  油猴: browser-extension
+  插件: plugin
+  换肤: ui-design
+  ui: ui-design
+  gui: ui-design
+  交互: ui-design
+  编辑器: editor
+  终端: terminal
+  代理: networking
+  协议: api
+  email api: email
+  mail server: email
+  数据分析: data-analysis
+  量化: data-analysis
+  excel: spreadsheet
+  openpyxl: spreadsheet
+  演示: presentation
+  知识库: knowledge-base
+  glossary: knowledge-base
+  handbook: knowledge-base
+  教程: learning
+  学习: learning
+  时间管理: productivity
+  生产力: productivity
+  个人: productivity
+  团队协作: collaboration
+  决策留痕: collaboration
+  无障碍: accessibility
+  平替: alternative
+  替代品: alternative
+  复刻: alternative
+  clone: alternative
+  open-source alternative: alternative
+  free alternative: alternative
+  reimplementation: alternative
+  区块链: blockchain
+  空投: crypto
+  支付: fintech
+  同花顺: fintech
+  电商: ecommerce
+  营销: marketing
+  移动增长: marketing
+  copy-ai: content-writing
+  jasper: content-writing
+  writesonic: content-writing
+  求职: jobs
+  面试: jobs
+  薪资透明: jobs
+  社区: social
+  公众号: social
+  抖音: social
+  qq: social
+  豆瓣: social
+  健身: health
+  情感: health
+  AI陪伴: ai-agent
+  助手: ai-agent
+  agent: ai-agent
+  ai agent: ai-agent
+  agentic os: ai-agent
+  coding-agents: ai-agent
+  编排: ai-agent
+  agent skill: agent-skill
+  agent技能: agent-skill
+  agent notes: agent-skill
+  agent测试: agent-skill
+  codex-skill: agent-skill
+  skills: agent-skill
+  上下文: prompt
+  免费模型: llm
+  AI原生: ai
+  AI检测: ai
+  multi-modal: multimodal
+  具身智能: robotics
+  vln: robotics
+  等变: ml-research
+  可解释性: ml-research
+  生物科技: bio
+  蛋白设计: bio
+  biosecurity: bio
+  starmap: science
+  # Generic words the model put in the entity slot. Each one either names a
+  # topic in other words or is too broad to gather anything.
+  music: audio
+  education: learning
+  storage: database
+  design: ui-design
+  theme: ui-design
+  remote: networking
+  calendar: productivity
+  local-model: llm
+  pii: privacy
+  documentation: document
+  visualization: data-analysis
+  # One entity under several spellings. An alias may also point at an entity
+  # slug, so every spelling lands on one page.
+  threejs: three.js
+  gta5: gta-v
+  gtav: gta-v
+  lol: league-of-legends
+  homeassistant: home-assistant
+  garrysmod: garrys-mod
+  starfox: star-fox
+  riscv: risc-v
+  wallpaperengine: wallpaper-engine
+  mariokart: mario-kart
+  llama-cpp: llama.cpp
+  llamacpp: llama.cpp
+  appletv: apple-tv
+  psvita: ps-vita
+  # The same product under a short name, an older name or a version number.
+  apex: apex-legends
+  burp: burp-suite
+  tarkov: escape-from-tarkov
+  google-antigravity: antigravity
+  helldivers2: helldivers
+  ms-office: microsoft-office
+  office: microsoft-office
+  nfs: need-for-speed
+  nintendo-3ds: 3ds
+  switch: nintendo-switch
+  obs-studio: obs
+  overwatch-2: overwatch
+  postgresql: postgres
+  quest: meta-quest
+  quest3: meta-quest
+  r6: rainbow-six-siege
+  teamfortress2: tf2
+  unreal: unreal-engine
+  wow: world-of-warcraft
+  nixpkgs: nix
+  lean4: lean
+  fsr4: fsr
+  seedance-2.5: seedance
+  # Entities that are a topic in other words.
+  cybersecurity: netsec
+  red-teaming: netsec
+  cve: exploit
+  diffusion: image-gen
+  # Signal-free: these say nothing a reader could use to find anything.
+  炫技: null
+  开源: null
+  源码: null
+  重复: null
+  模块化: null
+  聚合: null
+  meta: null
+  top100: null
+  韩语: null
+  open-source: null
+  developer-tools: null
+  cloud: null
+  distributed: null
+  desktop: null
+  mobile: null
+  console: null
+  memory: null
+  config: null
+  framework: null
+  json: null
+  saas: null
+  retro: null
+  preservation: null
+  # Programming languages: every entry already prints its language.
+  clojure: null
+  rust-app: null

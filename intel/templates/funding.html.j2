@@ -1,0 +1,79 @@
+{% extends "_base.html.j2" %}
+{% set F = ctx.funding %}
+{% set C = F.costs %}
+{% set en = ctx.lang == 'en' %}
+{% block title %}tierlist.tech {{ t('nav.funding') }}{% endblock %}
+{% block description %}{% if en %}What tierlist.tech spends on its language model and who has paid for it.{% else %}tierlist.tech 在大语言模型上花了多少钱、谁资助过。{% endif %}{% endblock %}
+{# Every figure comes from `ctx.funding` (deliver.funding.costs): the runs'
+   own usage reports and the hand-kept donations file. A donor appears here only when that file names them. #}
+{% macro usd(v, places=2) -%}{% if v is none %}–{% else %}${{ ('%.' ~ places ~ 'f')|format(v) }}{% endif %}{%- endmacro %}
+{% block content %}
+<header class="page-h"><h1>{% if en %}Funding{% else %}资助{% endif %}</h1></header>
+
+<p class="doc-lede">{% if en -%}
+tierlist.tech is free to read, with no ads and no accounts. What it costs is the language model that rates every repository, and all of that spend is on this page. Electricity and the server are not counted here; only the model's spend is.
+{%- else -%}
+tierlist.tech 免费阅读，没有广告，不用注册。它的花费是给每个仓库评级的大语言模型，这部分每一分钱都公开在这一页。电费和服务器不算在内，这里只算模型的花费。
+{%- endif %}</p>
+
+<section class="doc">
+  <dl class="fund-stats">
+    <div class="fs"><dt>{% if en %}Per day{% else %}每天{% endif %}</dt>
+      <dd class="fs-v num">{{ usd(C.average_daily_usd, 4) }}</dd>
+      <dd class="fs-k">{% if en %}scoring, last {{ F.average_days }} days{% else %}评分，最近 {{ F.average_days }} 天平均{% endif %}</dd></div>
+    <div class="fs"><dt>{% if en %}Spent so far{% else %}累计花费{% endif %}</dt>
+      <dd class="fs-v num">{{ usd(C.total_usd) }}</dd>
+      <dd class="fs-k">{% if en %}scoring calls{% else %}评分调用{% endif %}</dd></div>
+    <div class="fs"><dt>{% if en %}Donations{% else %}收到捐款{% endif %}</dt>
+      <dd class="fs-v num">{{ usd(C.donations.total_usd) }}</dd>
+      <dd class="fs-k">{% if en %}{{ C.donations.count }} in total{% else %}共 {{ C.donations.count }} 笔{% endif %}</dd></div>
+  </dl>
+</section>
+
+<section class="doc doc-boards">
+  <h2 class="doc-h">{% if en %}Give $1{% else %}资助 $1{% endif %}</h2>
+  {% if en %}
+  <p>Every gift is a single dollar, once.{% if C.average_daily_usd %} At the current pace a dollar pays for about {{ (1 / C.average_daily_usd)|round|int }} days of scoring.{% endif %} Each one is listed below on the day it arrives, under the name the donor chose, or as Anonymous.</p>
+  {% else %}
+  <p>每次只收一美元，一次性。{% if C.average_daily_usd %}按现在的速度，一美元够评分大约 {{ (1 / C.average_daily_usd)|round|int }} 天。{% endif %}每一笔到账当天列在下面，名字用捐款人自己选的；不想具名的写 Anonymous。</p>
+  {% endif %}
+  {% if F.github_sponsors %}
+  <p class="fund-give"><a class="fund-btn" href="https://github.com/sponsors/{{ F.github_sponsors }}" rel="noopener">{% if en %}Give $1 on GitHub Sponsors{% else %}在 GitHub Sponsors 资助 $1{% endif %}<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a></p>
+  {% endif %}
+</section>
+
+<section class="doc doc-boards">
+  <h2 class="doc-h">{% if en %}Donations{% else %}捐款记录{% endif %}</h2>
+  {% if C.donations.entries %}
+  <table class="doc-table">
+    <thead><tr><th>{% if en %}Date{% else %}日期{% endif %}</th><th>{% if en %}From{% else %}来自{% endif %}</th><th>{% if en %}Via{% else %}方式{% endif %}</th><th class="r">{% if en %}Amount{% else %}金额{% endif %}</th></tr></thead>
+    <tbody>
+    {% for d in C.donations.entries %}
+    <tr><td class="num">{{ d.date }}</td><td class="doc-k">{{ d.name }}</td><td>{{ d.via }}</td><td class="r num">{{ usd(d.amount_usd) }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p>{% if en %}No donations yet.{% else %}还没有捐款。{% endif %}</p>
+  {% endif %}
+</section>
+
+<section class="doc doc-boards">
+  <h2 class="doc-h">{% if en %}Spend{% else %}花费明细{% endif %}</h2>
+  <p class="doc-note">{% if en %}These are the scoring calls only, from each run's own report.{% else %}这里只有评分调用，来自每次运行自己的账单。{% endif %}</p>
+  {% if C.months %}
+  <table class="doc-table">
+    <thead><tr><th>{% if en %}Month{% else %}月份{% endif %}</th><th class="r">{% if en %}Spent{% else %}花费{% endif %}</th></tr></thead>
+    <tbody>
+    {% for m in C.months %}
+    <tr><td class="num">{{ m.month }}</td><td class="r num">{{ usd(m.spent_usd, 4) }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p>{% if en %}Nothing spent yet.{% else %}还没有花费。{% endif %}</p>
+  {% endif %}
+  <p class="doc-links"><a href="/api/v1/costs.json">costs.json</a></p>
+</section>
+{% endblock %}
+{% block footright %}{{ ctx.p }}/funding/{% endblock %}

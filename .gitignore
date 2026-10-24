@@ -1,0 +1,18 @@
+.env
+.venv/
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+data/
+
+# The operator's own working documents: product brief, design notes and
+# plans. They live in the operator's private notes, not in this repository.
+PRODUCT.md
+DESIGN.md
+.impeccable/
+docs/plan-*.md
+# Everything else that is the operator's own: notes, handoffs, database
+# dumps, logo sources, and the session's own agent instructions.
+private/
+CLAUDE.local.md

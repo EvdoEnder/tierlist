@@ -1,0 +1,11 @@
+# Every donation, entered by hand from the GitHub Sponsors dashboard, newest
+# anywhere in the list (the page sorts by date).
+#
+#   - date: 2026-11-02          # the day it arrived, UTC
+#     name: octocat             # as the donor chose to be shown;
+#                               # "Anonymous" when they asked not to be
+#     amount_usd: 1.00
+#     via: GitHub Sponsors
+#
+# Only real donations go here. The page renders this list and nothing else.
+donations: []

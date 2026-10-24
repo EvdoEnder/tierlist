@@ -1,0 +1,214 @@
+# Pipeline knobs for one radar sweep. Judgment standards live in the rubric
+# (intel/rubrics/<vertical>.yaml), not here — config says HOW MUCH to process,
+# the rubric decides WHAT IS WORTH WATCHING.
+
+# How far back "newly created" reaches (24–72h).
+lookback_hours: 72
+
+# Which adapters feed the scoring line, and the admission rules each is judged
+# by. Thresholds live with their source because a threshold is a sentence in
+# one platform's units: "five stars a day" says nothing about a Hacker News
+# post, which has points and no stars at all. Every source's survivors are
+# merged round-robin into the shared `max_candidates` cap, so turning one on
+# splits the paid batch rather than enlarging it — the LLM bill does not move.
+sources:
+  github:
+    enabled: true
+    # Search pages of 100, newest-by-stars first. 3 pages ≈ 300 repos, the
+    # ceiling the prefilter is sized for; raise together with max_candidates.
+    max_pages: 3
+    # Every new repository the search returns is rated, so the description
+    # and star-velocity lines are off (0): a repository with no description
+    # or no stars is the model's to rate D, not the prefilter's to hide.
+    # Only the star-farm guard below still drops rows before scoring.
+    min_description_chars: 0
+    min_star_velocity_per_day: 0
+    # Star-farm guard. A farm buys one star package per repository and
+    # publishes the batch in one sitting, so its rows share an EXACT star
+    # count and sit minutes apart; velocity cannot see it, because 150 stars
+    # in 1.2 days is 25x this line. Five repositories sharing a star count
+    # inside 60 minutes drops the whole burst. Replayed over every GitHub row
+    # in the store (1981 rows, 08-23 → 08-30) it removes 753 of them and none
+    # of the 163 that ever scored 40+; the best score it would ever have
+    # taken is 9. Set the cluster to 0 to switch it off.
+    star_farm_cluster: 5
+    star_farm_window_minutes: 60
+  github_trending:
+    # github.com/trending, parsed (no API). Catches repositories older than
+    # the lookback window that are surging now; morluto/rea, created
+    # 2026-04-14, gained 19,375 stars on 2026-10-09 and reached no board.
+    # Rows are board_only: snapshotted for the gain boards, never scored, so
+    # this source costs no LLM batch share. About 13 repos per page.
+    enabled: true
+    # Each period's gain also seeds the snapshot one window back, so a
+    # trending repo ranks on the 1/7/30-day gain boards the day it appears.
+    periods: [daily, weekly, monthly]
+  github_recent:
+    # Every repository created within `days` holding `min_stars`, read in
+    # star bands by the search API. `created_at` is the day a repository was
+    # made, not the day it went public, so a project kept private for weeks
+    # is too old for the 72h search on the day it appears; laogou717/dogsc
+    # (created 2026-08-23, public about 2026-10-05, ~70 stars a day) reached
+    # no source at all. On 2026-10-15 the cohort held 3,824 repositories in
+    # 42 requests, 2,072 of them absent from the store.
+    # Rows are board_only: new ones are inserted, all are snapshotted, none
+    # is scored or shown on a board.
+    enabled: true
+    days: 60
+    min_stars: 100
+    # Untagged cohort rows tagged per run, today's arrivals first, in
+    # tags-only calls of 50. The first runs work through the backlog: about
+    # 11,500 rows on 2026-10-18, roughly twelve days at this limit.
+    tag_limit: 1000
+  hn:
+    # Rated from 2026-08-30 to 2026-10-22. Off since then: ratings cover
+    # GitHub repositories only, because most Show HN posts are hosted
+    # products rather than open-source projects. Issues from those dates
+    # keep their Show HN board. The 15-minute news cron reads the `news.hn`
+    # block below instead and is unaffected by this switch.
+    enabled: false
+    since_hours: 72                # the sweep's window, not the news page's
+    hits_per_page: 100
+    # One page of 100 covers about a day whatever the window says: asking
+    # for 72h and reading one page returned 26h of posts (measured
+    # 2026-08-30). Three pages reached 54h of the same window. `intel.shadow`
+    # prints asked-vs-covered on every run, so the gap stays visible rather
+    # than being assumed closed.
+    max_pages: 3
+    tags: "show_hn"
+    # Both lines, because either alone admits the wrong thing. The rate has
+    # a one-hour floor under it, so points_per_hour >= 1 is true of every
+    # single-point post minutes after it is submitted; and points alone
+    # would rank a three-day-old post above one climbing twice as fast.
+    # Show HN points are small - median 2, p90 5 over a 24h sample - so 5 is
+    # already the top few percent of the board.
+    min_points: 5
+    min_points_per_hour: 1
+    # A post linking to a repository is enriched with that repository's
+    # description, language and star count (needs GITHUB_TOKEN, skipped
+    # without it). The post's own points stay in its `stars` field.
+    enrich_github: true
+    enrich_limit: 40
+
+  awesome:
+    # A curated list finds what a human decided was worth listing, and the
+    # signal is the DIFF: the line added last night, not the several hundred
+    # that have been there for years. The first sweep that sees a list
+    # records it and emits nothing — with no past to compare against, every
+    # standing entry would read as a discovery and take the whole batch.
+    enabled: false
+    watchlists:
+      - agarrharr/awesome-cli-apps
+      - alebcay/awesome-shell
+      - analysis-tools-dev/static-analysis
+      - awesome-selfhosted/awesome-selfhosted
+      - ripienaar/free-for-dev
+    # No velocity line: a ten-year-old library just endorsed by a curator is
+    # exactly the signal, and it has no velocity at all. The description is
+    # all these entries carry until enrichment fills the rest in.
+    min_description_chars: 20
+    enrich_limit: 40
+    # A README that is restructured rewrites every URL, and every entry then
+    # looks new. That is a formatting event, not 400 discoveries.
+    max_new_per_list: 25
+
+prefilter:
+  # Everything the LLM may see in one day, scored in requests of 50
+  # (llm.SCORE_BATCH). A runaway guard rather than a cut: a day's fetch is
+  # about 250–420 new repositories, and the cap only binds if a source
+  # misbehaves. At about $0.00015 a row, the cap is about $0.15 a day.
+  max_candidates: 1000
+
+scoring:
+  temperature: 0.3
+  # The thinking budget alone — `score_max_tokens` adds the rows on top, so
+  # the JSON never competes with the reasoning for one ceiling. Reasoner-family
+  # models burn thousands of tokens before the JSON even starts, and the
+  # amount grows with the batch: 2k–9k measured 2026-08-23, 16003 on
+  # 2026-08-29 (a 37-candidate batch that spent the entire flat ceiling
+  # thinking and emitted nothing), 34700 on 2026-09-09 with 49 candidates.
+  # The gateway request asks for `reasoning_effort: high` deliberately — the
+  # plan is flat-rate, so a better judgment is worth every token it takes —
+  # and the budget is set well above any measured burn. Unused ceiling caps,
+  # it does not spend. Keep this floor plus 300 per row at the 50-candidate
+  # cap (115000) under the endpoint's own output limit.
+  max_tokens: 100000
+
+# Tier lines per model version (intel.calibrate). The tiers are percentiles
+# of one model's own scores, so when the endpoint starts serving a new model
+# under the same alias (DeepSeek's `deepseek-flash` moves with each release),
+# the daily run scores the items rated in the last `window_days` again with
+# it, kept apart from the published scores, and measures its lines from
+# them. One calibration rescores at most `max_items` (about $1 at 2,000).
+# The drift check warns when a week's share of A-or-better leaves the band
+# expected/drift_factor .. expected*drift_factor around 10%; it never
+# recalibrates on its own.
+calibration:
+  auto: true
+  window_days: 30
+  max_items: 2000
+  min_items: 200
+  extend_days: 90
+  drift_days: 7
+  drift_min: 150
+  drift_factor: 3.0
+
+# Picks per board on the weekly and monthly issues and in the push; the
+# daily issue lists every repository it rated.
+top_n: 10
+
+# The daily star refresh (`intel.resnapshot`, also run at the end of every
+# sweep). The fetch alone gives each project a three-day star series, which
+# is shorter than the 7- and 30-day gain windows and far shorter than the
+# horizon a score has to be judged over; this block says how much of the
+# store keeps being followed after the fetch loses sight of it.
+snapshots:
+  # Unscored items are followed for this long after first sight — past the
+  # 30-day window with slack for a missed run. Scored items are followed
+  # regardless of age: they are the calibration cohort.
+  track_days: 45
+  # Ceiling on one refresh. 20000 items is ~200 GraphQL documents against a
+  # 5000-point hourly budget, so this is a runaway guard, not a target. At
+  # 5000 the cohort (about 11,400 on 2026-10-15) was cut every day, and the
+  # oldest unscored items lost their daily snapshot and every gain board.
+  max_items: 20000
+  # Repositories per GraphQL document; 100 is the node cap for this shape.
+  batch_size: 100
+
+# Live news — separate cron (`intel.run_news`), no LLM, no scoring.
+news:
+  # Fetch window, hours back for HN; RSS feeds carry no lookback (their own
+  # window). The run is deliberately short and idempotent: same filter,
+  # same output.
+  hn:
+    # 48h: Show HN in a quiet night can sit empty for a whole 24h window;
+    # the page reads freshest-first and the RSS feeds cover the gap anyway.
+    since_hours: 48
+    hits_per_page: 100
+    # Show HN by default; optionally also the front page (commentary-heavy).
+    tags: "show_hn"
+  rss:
+    feeds:
+      # feed key → URL; the key becomes the stored feed tag (source badge).
+      techcrunch: "https://techcrunch.com/feed/"
+      arstechnica: "https://feeds.arstechnica.com/arstechnica/index"
+      devto: "https://dev.to/feed"
+  # Max items the page/NEWS board ever shows per refresh.
+  page_limit: 60
+  ticker_limit: 6
+
+# The public source repository, linked from every page's footer and from
+# /connect/ for anyone who wants to run their own copy.
+repo_url: https://github.com/EvdoEnder/tierlist
+
+# Built but unpublished parts of the site (see intel/features.py). Off means
+# no files are written and no page links to them.
+features:
+  funding_page: false
+  json_api: false
+
+# The /funding/ page, when `features.funding_page` is on. Spend is read from
+# the store; donations from intel/funding/donations.yaml.
+funding:
+  # github.com/sponsors/<this>. One $1 one-time tier, no custom amounts.
+  github_sponsors: EvdoEnder

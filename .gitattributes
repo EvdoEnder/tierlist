@@ -1,0 +1,8 @@
+# One line ending everywhere, whatever core.autocrlf says on the machine
+# that checks the repository out: a CRLF in a shell script or a YAML file
+# breaks it on Linux, where the site is built.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.ico binary
+*.dump binary
