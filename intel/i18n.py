@@ -38,7 +38,6 @@ STRINGS: dict[str, dict[str, str]] = {
         "lede.fetched": "抓取",
         "lede.filtered": "粗筛",
         "lede.sent": "送审",
-        "lede.cost": "成本",
         "lede.new_found": "新发现",
         # The one sentence of prose in the chrome: the period's result,
         # stated. Keyed off new_count, which every context carries —
@@ -209,7 +208,6 @@ STRINGS: dict[str, dict[str, str]] = {
         "lede.fetched": "Fetched",
         "lede.filtered": "Filtered",
         "lede.sent": "Sent",
-        "lede.cost": "Cost",
         "lede.new_found": "New finds",
         "lede.headline_daily": ("{found} new projects found today, "
                                "{n} rated."),

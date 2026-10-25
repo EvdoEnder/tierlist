@@ -172,8 +172,8 @@
 
 {# The head of an issue or the landing: the period set enormous as the
    headline, the edition's name beside it in grey, the result as one
-   sentence, and the provenance (what was read, what it cost) as one quiet
-   line. `big` is the short form of the period: 10.22, W43, 2026.10. #}
+   sentence, and the provenance (what was read, filtered and rated) as one
+   quiet line. What a run cost and which model ran it stay off the page. `big` is the short form of the period: 10.22, W43, 2026.10. #}
 {% macro page_head(big, word, range_key, headline_key) -%}
 {% set L = ctx.lede %}
 <header class="edition">
@@ -187,7 +187,6 @@
     {%- if L.candidates is not none %}<span>{{ t('lede.filtered') }} <span class="num">{{ L.candidates }}</span></span>
     {%- elif L.sent is not none %}<span>{{ t('lede.sent') }} <span class="num">{{ L.sent }}</span></span>{% endif -%}
     {%- if L.scored %}<span>{{ t('lede.scored') }} <span class="num">{{ L.scored }}</span></span>{% endif -%}
-    {%- if L.cost is not none %}<span>{{ t('lede.cost') }} <span class="num">{{ L.cost }}</span>{% if L.model %} · {{ L.model }}{% endif %}</span>{% endif -%}
   </p>
   <p class="since" id="since" hidden></p>
 </header>
